@@ -1,0 +1,40 @@
+---
+name: "SRT Reservation System"
+version: "1.0.0"
+slug: "srt_reservation"
+description: "SRT 예약 시스템"
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+url: https://github.com/jinizest/SuperT
+startup: application
+boot: auto
+uart: true
+map:
+  - share:rw
+webui: "http://[HOST]:[PORT:5000]"
+options:
+  share/srt/app.py 실행파일: true
+  share/srt/templates/index.html 템플릿 파일: true
+  port: 5000
+  srt_id: ""
+  srt_password: ""
+  telegram_bot_token: ""
+  telegram_chat_id: ""
+  phone_number: ""
+  log_level: "INFO"
+schema:
+  share/srt/app.py 실행파일: bool
+  share/srt/templates/index.html 템플릿 파일: bool
+  port: int
+  srt_id: str?
+  srt_password: password?
+  telegram_bot_token: str?
+  telegram_chat_id: str?
+  phone_number: str?
+  log_level: list(DEBUG|INFO|WARNING|ERROR|CRITICAL)
+ports:
+  5000/tcp: 5000

@@ -1,4 +1,4 @@
-# HA Add-on: SRT Reservation PUBLIC
+# HA SRT Reserv PUBLIC by simon
 
 ## 소개
 

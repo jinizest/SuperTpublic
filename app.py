@@ -7,6 +7,7 @@ import threading
 import queue
 import os
 import logging
+from logging.handlers import RotatingFileHandler
 import configparser
 import io
 
@@ -25,10 +26,12 @@ def get_config(key, default=None):
         logging.error(f"설정 파일을 찾을 수 없습니다: {config_file}")
         return default
 
-global messages, stop_reservation, output_queue
-messages = []
-stop_reservation = False
-output_queue = queue.Queue()
+# 전역 변수 설정
+global messages, stop_reservation, output_queue, user_loggers
+messages = {}
+stop_reservation = {}
+output_queue = {}
+user_loggers = {}
 
 # 설정 값 가져오기
 SRT_ID = get_config('srt_id', '')
@@ -36,6 +39,17 @@ SRT_PASSWORD = get_config('srt_password', '')
 TELEGRAM_BOT_TOKEN = get_config('telegram_bot_token', '')
 TELEGRAM_CHAT_ID = get_config('telegram_chat_id', '')
 PHONE_NUMBER = get_config('phone_number', '')
+
+def get_user_logger(user_id):
+    if user_id not in user_loggers:
+        logger = logging.getLogger(f'user_{user_id}')
+        logger.setLevel(logging.INFO)
+        handler = RotatingFileHandler(f'logs/user_{user_id}.log', maxBytes=10000, backupCount=1)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        user_loggers[user_id] = logger
+    return user_loggers[user_id]
 
 def send_telegram_message(bot_token, chat_id, message):
     if bot_token and chat_id:
@@ -50,52 +64,54 @@ def send_telegram_message(bot_token, chat_id, message):
         else:
             logging.error(f"메시지 전송에 실패했습니다. 상태 코드: {response.status_code}")
 
-def attempt_reservation(sid, spw, dep_station, arr_station, date, time_start, time_end, phone_number, enable_telegram, bot_token, chat_id):
-    global messages, stop_reservation
+def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_start, time_end, phone_number, enable_telegram, bot_token, chat_id):
+    logger = get_user_logger(user_id)
+    logger.info(f'예약 프로세스 시작 (사용자 ID: {user_id})')
+    
     try:
         srt = SRT(sid, spw, verbose=False)
-        while not stop_reservation:
+        while not stop_reservation.get(user_id, False):
             try:
                 message = '예약시도.....' + ' @' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                logging.info(message)
-                output_queue.put(message)
+                logger.info(message)
+                output_queue[user_id].put(message)
                 time.sleep(1)
                 
                 trains = srt.search_train(dep_station, arr_station, date, time_start, time_end, available_only=False)
                 if 'Expecting value' in str(trains):
                     message = 'Expecting value 오류'
-                    logging.error(message)
-                    output_queue.put(message)
-                    messages.append(message)
+                    logger.error(message)
+                    output_queue[user_id].put(message)
+                    messages[user_id].append(message)
                     continue
                 
                 for train in trains:
-                    logging.info(str(train))
-                    output_queue.put(str(train))
+                    logger.info(str(train))
+                    output_queue[user_id].put(str(train))
                 
                 for train in trains:
-                    if stop_reservation:
+                    if stop_reservation.get(user_id, False):
                         break
                     try:
                         srt.reserve_standby(train)
                         srt.reserve_standby_option_settings(phone_number, True, True)
                         success_message = f"SRT 예약 대기 완료 {train}"
-                        messages.append(success_message)
-                        output_queue.put(success_message)
+                        messages[user_id].append(success_message)
+                        output_queue[user_id].put(success_message)
                         if enable_telegram:
                             send_telegram_message(bot_token, chat_id, success_message)
-                        logging.info("예약 성공했지만 계속 진행합니다.")
+                        logger.info("예약 성공했지만 계속 진행합니다.")
                         break
                     except Exception as e:
                         error_message = f"열차 {train}에 대한 오류 발생: {e}"
-                        logging.error(error_message)
-                        output_queue.put(error_message)
-                        messages.append(error_message)
+                        logger.error(error_message)
+                        output_queue[user_id].put(error_message)
+                        messages[user_id].append(error_message)
             except Exception as e:
                 error_message = f"메인 루프에서 오류 발생: {e}"
-                logging.error(error_message)
-                output_queue.put(error_message)
-                messages.append(error_message)
+                logger.error(error_message)
+                output_queue[user_id].put(error_message)
+                messages[user_id].append(error_message)
                 if '사용자가 많아 접속이 원활하지 않습니다.' in str(e):
                     time.sleep(5)
                     srt = SRT(sid, spw, verbose=False)
@@ -106,28 +122,30 @@ def attempt_reservation(sid, spw, dep_station, arr_station, date, time_start, ti
                 srt = SRT(sid, spw, verbose=False)
     except Exception as main_e:
         critical_error = f"심각한 오류 발생: {main_e}"
-        logging.critical(critical_error)
-        output_queue.put(critical_error)
-        messages.append(critical_error)
+        logger.critical(critical_error)
+        output_queue[user_id].put(critical_error)
+        messages[user_id].append(critical_error)
         if enable_telegram:
             send_telegram_message(bot_token, chat_id, critical_error)
         time.sleep(30)
         srt = SRT(sid, spw, verbose=True)
     finally:
-        stop_reservation = False
+        stop_reservation[user_id] = False
         if 'srt' in locals():
             srt.logout()
-    return messages
-
-reservation_thread = None
+    return messages[user_id]
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    global reservation_thread, stop_reservation
     if request.method == 'POST':
-        if reservation_thread and reservation_thread.is_alive():
+        user_id = request.remote_addr
+        if user_id in stop_reservation and not stop_reservation[user_id]:
             return jsonify({'message': '이미 예약 프로세스가 실행 중입니다.'})
-        stop_reservation = False
+        
+        stop_reservation[user_id] = False
+        messages[user_id] = []
+        output_queue[user_id] = queue.Queue()
+        
         sid = request.form.get('sid', SRT_ID)
         spw = request.form.get('spw', SRT_PASSWORD)
         dep_station = request.form['dep_station']
@@ -143,9 +161,11 @@ def index():
         enable_telegram = 'enable_telegram' in request.form
         bot_token = request.form.get('bot_token', TELEGRAM_BOT_TOKEN)
         chat_id = request.form.get('chat_id', TELEGRAM_CHAT_ID)
-        reservation_thread = threading.Thread(target=attempt_reservation, args=(sid, spw, dep_station, arr_station, date, start_time, end_time, phone_number, enable_telegram, bot_token, chat_id))
-        reservation_thread.start()
-        return jsonify({'message': '예약 프로세스가 시작되었습니다.'})
+        
+        thread = threading.Thread(target=attempt_reservation, args=(user_id, sid, spw, dep_station, arr_station, date, start_time, end_time, phone_number, enable_telegram, bot_token, chat_id))
+        thread.start()
+        
+        return jsonify({'message': f'예약 프로세스가 시작되었습니다. (사용자 ID: {user_id})'})
     
     default_values = {
         'srt_id': SRT_ID,
@@ -158,48 +178,19 @@ def index():
 
 @app.route('/stop', methods=['POST'])
 def stop():
-    global stop_reservation
-    stop_reservation = True
-    if 'srt' in globals():
-        srt.logout()
+    user_id = request.remote_addr
+    stop_reservation[user_id] = True
     return jsonify({'message': '예약 프로세스가 중단되었습니다.'})
 
-@app.route('/stream') #241125 실시간 로깅 필요하긴한데... 그냥 써도 무관할듯~
-def stream(): 
+@app.route('/stream/<user_id>')
+def stream(user_id):
     def generate():
-        log_stream = io.StringIO()
-        handler = logging.StreamHandler(log_stream)
-        formatter = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-        handler.setFormatter(formatter)
-        logging.getLogger().addHandler(handler)
-        last_timestamp = datetime.now()
-
         while True:
-            log_stream.seek(0)
-            log_content = log_stream.read()
-            log_stream.truncate(0)
-            log_stream.seek(0)
-
-            if log_content:
-                log_lines = log_content.strip().split('\n')
-                new_logs = []
-                for line in log_lines:
-                    try:
-                        timestamp_str = line.split(' - ')[0]
-                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
-                        if timestamp > last_timestamp:
-                            new_logs.append(line)
-                            last_timestamp = timestamp
-                    except (ValueError, IndexError):
-                        continue  # 잘못된 형식의 로그 라인은 무시
-
-                if new_logs:
-                    new_logs.reverse()
-                    newline = '\n'
-                    yield f"data: {newline.join(new_logs)}\n\n"
-            else:
-                time.sleep(0.1)  # 0.1초마다 확인
-
+            try:
+                message = output_queue[user_id].get_nowait()
+                yield f"data: {message}\n\n"
+            except queue.Empty:
+                time.sleep(0.1)
     return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == '__main__':
@@ -209,6 +200,7 @@ if __name__ == '__main__':
         datefmt='%Y-%m-%d %H:%M:%S',
         level=getattr(logging, log_level)
     )
+    
     logger = logging.getLogger(__name__)
     try:
         port = int(get_config('PORT', 5000))
@@ -216,5 +208,6 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=port)
     except Exception as e:
         logger.error(f"Error starting application: {e}")
+    
     while True:
         time.sleep(30)

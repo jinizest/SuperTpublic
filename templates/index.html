@@ -362,6 +362,11 @@
             toggleInputField('dep_station', 'customDepStation');
             toggleInputField('arr_station', 'customArrStation');
         }
+
+        let source = new EventSource('/stream/' + userIp);
+        source.onmessage = function(event) {
+        document.getElementById('log-area').innerHTML = event.data.replace(/\n/g, '<br>');
+        };
     </script>
 </head>
 <body>
@@ -471,7 +476,7 @@
             </div>
         </form>
         <div id='results' style="padding-top: 10px"></div>
-        <div id="output" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
+        <div id="log-area" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
     </main>
 </body>
 </html>

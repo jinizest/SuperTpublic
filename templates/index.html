@@ -321,6 +321,7 @@
             toggleTelegramFields();
         }
 
+        var userIp = "{{ request.remote_addr }}";
         var outputSource = new EventSource('/stream/' + userIp);
         outputSource.onmessage = function(event) {
             var outputDiv = document.getElementById("log-area");

@@ -164,8 +164,8 @@ def stop():
         srt.logout()
     return jsonify({'message': '예약 프로세스가 중단되었습니다.'})
 
-@app.route('/stream')
-def stream():
+@app.route('/stream') #241125 실시간 로깅 필요하긴한데... 그냥 써도 무관할듯~
+def stream(): 
     def generate():
         log_stream = io.StringIO()
         handler = logging.StreamHandler(log_stream)

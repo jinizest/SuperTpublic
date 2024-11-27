@@ -205,15 +205,24 @@
             height: 18px;
         }
         @media (max-width: 500px) {
+            body {
+                padding: 2vw; /* 뷰포트 너비(viewport width)의 2%로 패딩 설정 */
+            }
             h1 {
-              font-size: 24px;
-              padding-right: 100px;
+                font-size: 20px;
             }
             
             .creator {
-              font-size: 10px;
+                font-size: 8px;
             }
-          }
+            
+            /* input과 select 요소의 너비 조정 */
+            input#sid, input#spw, select#dep_station, select#arr_station {
+                width: 100% !important; /* 부모 요소의 너비에 맞춰 조정 */
+                box-sizing: border-box; /* 패딩과 보더를 포함한 너비 계산 */
+                margin-bottom: 5px; /* 요소 간의 여백 추가 */
+            }
+        }
     </style>
     <script>
         let isReservationRunning = false;
@@ -362,17 +371,17 @@
             <div class="login-container">
                 <div class="input-group">
                     <label for="sid">SRT ID:</label>
-                    <input type="text" style="width: 200px" id="sid" name="sid" value="{{ srt_id }}" required>
+                    <input type="text" id="sid" name="sid" value="{{ srt_id }}" required>
                 </div>
                 <div class="input-group">
                     <label for="spw">비밀번호:</label>
-                    <input type="password" style="width: 200px" id="spw" name="spw" value="{{ srt_password }}" required>
+                    <input type="password" id="spw" name="spw" value="{{ srt_password }}" required>
                 </div>
             </div>
             <div class="station-container">
                 <div class="station-select">
                     <label for="dep_station">출발역:</label>
-                    <select id="dep_station" style="width: 200px" name="dep_station" onchange="toggleInputField('dep_station', 'customDepStation')">
+                    <select id="dep_station" name="dep_station" onchange="toggleInputField('dep_station', 'customDepStation')">
                         <option value="동탄">동탄</option>
                         <option value="동대구">동대구</option>
                         <option value="수서">수서</option>

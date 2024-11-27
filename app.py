@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, session
 from SRT import SRT
 import requests
 from datetime import datetime
@@ -152,6 +152,19 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
             srt.logout()
     return messages[user_id]
 
+
+# -------------------- FLASK -----------------------------#
+
+@app.before_request #클라이언트 연결 확인
+def check_session():
+    if 'user_id' not in session:
+        session['user_id'] = request.remote_addr
+
+@app.route('/heartbeat') #클라이언트 연결 확인
+def heartbeat():
+    return 'OK'
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -243,6 +256,21 @@ def stream(user_id):
                     time.sleep(0.1)
 
     return Response(generate(), mimetype='text/event-stream')
+
+
+def cleanup_reservation(user_id): # 연결 끊기면 종료
+    stop_reservation[user_id] = True
+    # 필요한 추가 정리 작업 수행
+
+def check_active_sessions(): #연결되어있는지 확인
+    while True:
+        time.sleep(30)  # 30초마다 확인
+        for user_id in list(stop_reservation.keys()):
+            if user_id not in session:
+                cleanup_reservation(user_id)
+
+# 백그라운드에서 세션 체크 스레드 실행
+threading.Thread(target=check_active_sessions, daemon=True).start()
 
 if __name__ == '__main__':
     log_level = get_config('LOG_LEVEL', 'INFO').upper()

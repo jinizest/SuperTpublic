@@ -369,6 +369,15 @@
             toggleInputField('arr_station', 'customArrStation');
         }
 
+        window.addEventListener('beforeunload', function (e) {
+            // 서버에 중지 요청 보내기
+            fetch('/stop', { method: 'POST' });
+        });
+
+        setInterval(function() {
+            fetch('/heartbeat');
+        }, 20000);  // 20초마다 하트비트 전송 (서버 연결 확인)
+
     </script>
 </head>
 <body>

@@ -13,6 +13,10 @@ import io
 
 app = Flask(__name__)
 
+# 로그 디렉토리 생성
+log_dir = '/share/srt/logs'
+os.makedirs(log_dir, exist_ok=True)
+
 def get_config(key, default=None):
     config = configparser.ConfigParser()
     config_file = '/share/srt/app.conf'
@@ -26,7 +30,6 @@ def get_config(key, default=None):
         logging.error(f"설정 파일을 찾을 수 없습니다: {config_file}")
         return default
 
-# 전역 변수 설정
 global messages, stop_reservation, output_queue, user_loggers
 messages = {}
 stop_reservation = {}
@@ -44,10 +47,17 @@ def get_user_logger(user_id):
     if user_id not in user_loggers:
         logger = logging.getLogger(f'user_{user_id}')
         logger.setLevel(logging.INFO)
-        handler = RotatingFileHandler(f'logs/user_{user_id}.log', maxBytes=10000, backupCount=1)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+        try:
+            log_file = os.path.join('/share/srt/logs', f'user_{user_id}.log')
+            handler = RotatingFileHandler(log_file, maxBytes=10000, backupCount=1)
+            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        except Exception as e:
+            print(f"로그 파일 생성 중 오류 발생: {e}")
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            logger.addHandler(console_handler)
         user_loggers[user_id] = logger
     return user_loggers[user_id]
 

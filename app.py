@@ -139,7 +139,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                 time.sleep(5)
                 srt = SRT(sid, spw, verbose=False)
     except Exception as main_e:
-        critical_error = f"심각한 오류 발생: {main_e}"
+        critical_error = f"MACRO 중지, 오류 발생: {main_e}"
         logger.critical(critical_error)
         output_queue[user_id].put(critical_error)
         output_queue[user_id].put("CRITICAL_ERROR")

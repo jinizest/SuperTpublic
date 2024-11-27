@@ -1,15 +1,15 @@
 ---
-name: "SRT Reservation System"
-version: "1.0.0"
+name: "SRT Reserv Public by Simon"
+version: "3.1.1"
 slug: "srt_reservation"
-description: "SRT 예약 시스템"
+description: "SRT macro"
 arch:
   - armhf
   - armv7
   - aarch64
   - amd64
   - i386
-url: https://github.com/jinizest/SuperT
+url: https://github.com/jinizest/SuperTpublic
 startup: application
 boot: auto
 uart: true

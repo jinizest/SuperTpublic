@@ -117,8 +117,8 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                         logger.error(error_message)
                         output_queue[user_id].put(error_message)
                         messages[user_id].append(error_message)
-                        if '비밀번호' in str(e):
-                            output_queue[user_id].put("PASSWORD_ERROR")
+                        if '비밀번호' in str(e) or '심각한 오류' in str(e):
+                            output_queue[user_id].put("CRITICAL_ERROR")
                             stop_reservation[user_id] = True
                             break
             except Exception as e:
@@ -132,8 +132,8 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                     continue
                 if enable_telegram:
                     send_telegram_message(bot_token, chat_id, error_message)
-                if '비밀번호' in str(e):
-                    output_queue[user_id].put("PASSWORD_ERROR")
+                if '비밀번호' in str(e) or '심각한 오류' in str(e):
+                    output_queue[user_id].put("CRITICAL_ERROR")
                     stop_reservation[user_id] = True
                     break
                 time.sleep(5)
@@ -142,15 +142,12 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
         critical_error = f"심각한 오류 발생: {main_e}"
         logger.critical(critical_error)
         output_queue[user_id].put(critical_error)
+        output_queue[user_id].put("CRITICAL_ERROR")
         messages[user_id].append(critical_error)
+        stop_reservation[user_id] = True
         if enable_telegram:
             send_telegram_message(bot_token, chat_id, critical_error)
-        if '비밀번호' in str(main_e):
-            output_queue[user_id].put("PASSWORD_ERROR")
-        time.sleep(30)
-        srt = SRT(sid, spw, verbose=True)
     finally:
-        stop_reservation[user_id] = False
         if 'srt' in locals():
             srt.logout()
     return messages[user_id]

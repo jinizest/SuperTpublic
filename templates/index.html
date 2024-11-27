@@ -185,7 +185,7 @@
         .input-group label {
             margin: 5px;
         }
-        #output {
+        #log-area {
             width: 100%;
             height: 300px;
             overflow-y: scroll;
@@ -325,16 +325,21 @@
         var outputSource = new EventSource('/stream/' + userIp);
         outputSource.onmessage = function(event) {
             var outputDiv = document.getElementById("log-area");
-            var newLogs = event.data.split('\n').filter(Boolean);
-            newLogs.forEach(function(log) {
-                var logElement = document.createElement('div');
-                logElement.textContent = log;
-                outputDiv.insertBefore(logElement, outputDiv.firstChild);
-            });
-            while (outputDiv.childElementCount > 1000) {
-                outputDiv.removeChild(outputDiv.lastChild);
+            if (event.data === "CRITICAL_ERROR") {
+                alert("심각한 오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
+                document.getElementById("stopButton").click();
+            } else {
+                var newLogs = event.data.split('\n').filter(Boolean);
+                newLogs.forEach(function(log) {
+                    var logElement = document.createElement('div');
+                    logElement.textContent = log;
+                    outputDiv.insertBefore(logElement, outputDiv.firstChild);
+                });
+                while (outputDiv.childElementCount > 1000) {
+                    outputDiv.removeChild(outputDiv.lastChild);
+                }
             }
-        };        
+        };     
 
         function toggleInputVisibility() {
             var botTokenInput = document.getElementById('bot_token');
@@ -373,7 +378,7 @@
             <div class="login-container">
                 <div class="input-group">
                     <label for="sid">SRT ID:</label>
-                    <input type="text" id="sid" name="sid" value="{{ srt_id }}" required>
+                    <input type="text" id="sid" name="sid" value="{{ srt_id }}" required pattern="\d{1,10}" title="최대 10자리의 숫자만 입력 가능합니다" maxlength="10">
                 </div>
                 <div class="input-group">
                     <label for="spw">비밀번호:</label>

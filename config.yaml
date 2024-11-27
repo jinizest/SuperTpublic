@@ -17,9 +17,9 @@ map:
   - share:rw
 webui: "http://[HOST]:[PORT:5000]"
 options:
-  share/srt/app.py 실행파일: true
-  share/srt/templates/index.html 템플릿 파일: true
-  port: 5000
+  share/srt_public/app.py 실행파일: true
+  share/srt_public/templates/index.html 템플릿 파일: true
+  port: 5050
   srt_id: ""
   srt_password: ""
   telegram_bot_token: ""
@@ -27,8 +27,8 @@ options:
   phone_number: ""
   log_level: "INFO"
 schema:
-  share/srt/app.py 실행파일: bool
-  share/srt/templates/index.html 템플릿 파일: bool
+  share/srt_public/app.py 실행파일: bool
+  share/srt_public/templates/index.html 템플릿 파일: bool
   port: int
   srt_id: str?
   srt_password: password?
@@ -37,4 +37,4 @@ schema:
   phone_number: str?
   log_level: list(DEBUG|INFO|WARNING|ERROR|CRITICAL)
 ports:
-  5000/tcp: 5000
+  5050/tcp: 5050

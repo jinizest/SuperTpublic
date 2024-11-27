@@ -14,12 +14,12 @@ import io
 app = Flask(__name__)
 
 # 로그 디렉토리 생성
-log_dir = '/share/srt/logs'
+log_dir = '/share/srt_public/logs'
 os.makedirs(log_dir, exist_ok=True)
 
 def get_config(key, default=None):
     config = configparser.ConfigParser()
-    config_file = '/share/srt/app.conf'
+    config_file = '/share/srt_public/app.conf'
     if os.path.exists(config_file):
         config.read(config_file)
         try:
@@ -48,7 +48,7 @@ def get_user_logger(user_id):
         logger = logging.getLogger(f'user_{user_id}')
         logger.setLevel(logging.INFO)
         try:
-            log_file = os.path.join('/share/srt/logs', f'user_{user_id}.log')
+            log_file = os.path.join('/share/srt_public/logs', f'user_{user_id}.log')
             handler = RotatingFileHandler(log_file, maxBytes=10000, backupCount=1)
             formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
             handler.setFormatter(formatter)
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     
     logger = logging.getLogger(__name__)
     try:
-        port = int(get_config('PORT', 5000))
+        port = int(get_config('PORT', 5050))
         logger.info(f"Starting SRT application on port {port}")
         app.run(host='0.0.0.0', port=port)
     except Exception as e:

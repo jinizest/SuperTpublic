@@ -321,9 +321,9 @@
             toggleTelegramFields();
         }
 
-        var outputSource = new EventSource("/stream");
+        var outputSource = new EventSource('/stream/' + userIp);
         outputSource.onmessage = function(event) {
-            var outputDiv = document.getElementById("output");
+            var outputDiv = document.getElementById("log-area");
             var newLogs = event.data.split('\n').filter(Boolean);
             newLogs.forEach(function(log) {
                 var logElement = document.createElement('div');
@@ -363,10 +363,6 @@
             toggleInputField('arr_station', 'customArrStation');
         }
 
-        let source = new EventSource('/stream/' + userIp);
-        source.onmessage = function(event) {
-        document.getElementById('log-area').innerHTML = event.data.replace(/\n/g, '<br>');
-        };
     </script>
 </head>
 <body>

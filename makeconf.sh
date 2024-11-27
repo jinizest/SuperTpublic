@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CONFIG_FILE=/data/options.json
-CONFIG_srtapp=/share/srt/app.conf
+CONFIG_srtapp=/share/srt_public/app.conf
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "[Error] 설정 파일을 찾을 수 없습니다: $CONFIG_FILE"

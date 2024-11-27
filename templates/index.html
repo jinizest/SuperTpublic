@@ -326,7 +326,7 @@
         outputSource.onmessage = function(event) {
             var outputDiv = document.getElementById("log-area");
             if (event.data === "CRITICAL_ERROR") {
-                alert("심각한 오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
+                alert("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
                 document.getElementById("stopButton").click();
             } else {
                 var newLogs = event.data.split('\n').filter(Boolean);
@@ -378,7 +378,7 @@
             <div class="login-container">
                 <div class="input-group">
                     <label for="sid">SRT ID:</label>
-                    <input type="text" id="sid" name="sid" value="{{ srt_id }}" required pattern="\d{1,10}" title="최대 10자리의 숫자만 입력 가능합니다" maxlength="10">
+                    <input type="text" id="sid" name="sid" value="{{ srt_id }}" required pattern="\d{1,10}" title="최대 10자리의 숫자만 입력 가능합니다" maxlength="10" inputmode="numeric">
                 </div>
                 <div class="input-group">
                     <label for="spw">비밀번호:</label>

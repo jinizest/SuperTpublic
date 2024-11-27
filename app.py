@@ -117,6 +117,10 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                         logger.error(error_message)
                         output_queue[user_id].put(error_message)
                         messages[user_id].append(error_message)
+                        if '비밀번호' in str(e):
+                            output_queue[user_id].put("PASSWORD_ERROR")
+                            stop_reservation[user_id] = True
+                            break
             except Exception as e:
                 error_message = f"메인 루프에서 오류 발생: {e}"
                 logger.error(error_message)
@@ -128,6 +132,10 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                     continue
                 if enable_telegram:
                     send_telegram_message(bot_token, chat_id, error_message)
+                if '비밀번호' in str(e):
+                    output_queue[user_id].put("PASSWORD_ERROR")
+                    stop_reservation[user_id] = True
+                    break
                 time.sleep(5)
                 srt = SRT(sid, spw, verbose=False)
     except Exception as main_e:
@@ -137,6 +145,8 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
         messages[user_id].append(critical_error)
         if enable_telegram:
             send_telegram_message(bot_token, chat_id, critical_error)
+        if '비밀번호' in str(main_e):
+            output_queue[user_id].put("PASSWORD_ERROR")
         time.sleep(30)
         srt = SRT(sid, spw, verbose=True)
     finally:
@@ -193,41 +203,17 @@ def stop():
     return jsonify({'message': '예약 프로세스가 중단되었습니다.'})
 
 @app.route('/stream/<user_id>')
-def stream(user_id): 
+def stream(user_id):
     def generate():
-        log_stream = io.StringIO()
-        handler = logging.StreamHandler(log_stream)
-        formatter = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-        handler.setFormatter(formatter)
-        logging.getLogger().addHandler(handler)
-        last_timestamp = datetime.now()
-
         while True:
-            log_stream.seek(0)
-            log_content = log_stream.read()
-            log_stream.truncate(0)
-            log_stream.seek(0)
-
-            if log_content:
-                log_lines = log_content.strip().split('\n')
-                new_logs = []
-                for line in log_lines:
-                    try:
-                        timestamp_str = line.split(' - ')[0]
-                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
-                        if timestamp > last_timestamp and user_id in line:
-                            new_logs.append(line)
-                            last_timestamp = timestamp
-                    except (ValueError, IndexError):
-                        continue  # 잘못된 형식의 로그 라인은 무시
-
-                if new_logs:
-                    new_logs.reverse()
-                    newline = '\n'
-                    yield f"data: {newline.join(new_logs)}\n\n"
-            else:
-                time.sleep(0.1)  # 0.1초마다 확인
-
+            try:
+                message = output_queue[user_id].get_nowait()
+                if message == "PASSWORD_ERROR":
+                    yield f"data: PASSWORD_ERROR\n\n"
+                else:
+                    yield f"data: {message}\n\n"
+            except queue.Empty:
+                time.sleep(0.1)
     return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == '__main__':

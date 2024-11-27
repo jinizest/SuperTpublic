@@ -20,16 +20,19 @@ options:
   share/srt_public/app.py 실행파일: true
   share/srt_public/templates/index.html 템플릿 파일: true
   port: 5050
+  secret_key: "vmffktmzm!@#"
   srt_id: ""
   srt_password: ""
   telegram_bot_token: ""
   telegram_chat_id: ""
   phone_number: ""
   log_level: "INFO"
+  
 schema:
   share/srt_public/app.py 실행파일: bool
   share/srt_public/templates/index.html 템플릿 파일: bool
   port: int
+  secret_key: password?
   srt_id: str?
   srt_password: password?
   telegram_bot_token: str?

@@ -11,12 +11,6 @@ from logging.handlers import RotatingFileHandler
 import configparser
 import io
 
-app = Flask(__name__)
-
-# 로그 디렉토리 생성
-log_dir = '/share/srt_public/logs'
-os.makedirs(log_dir, exist_ok=True)
-
 def get_config(key, default=None):
     config = configparser.ConfigParser()
     config_file = '/share/srt_public/app.conf'
@@ -29,6 +23,17 @@ def get_config(key, default=None):
     else:
         logging.error(f"설정 파일을 찾을 수 없습니다: {config_file}")
         return default
+
+app = Flask(__name__)
+
+SECRET_KEY = get_config('secret_key', 'vmffktmzm!@#')
+app.secret_key = 'your_secret_key_here'  # 보안설정 안전한 랜덤
+
+# 로그 디렉토리 생성
+log_dir = '/share/srt_public/logs'
+os.makedirs(log_dir, exist_ok=True)
+
+
 
 global messages, stop_reservation, output_queue, user_loggers
 messages = {}

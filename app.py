@@ -205,15 +205,46 @@ def stop():
 @app.route('/stream/<user_id>')
 def stream(user_id):
     def generate():
+        log_stream = io.StringIO()
+        handler = logging.StreamHandler(log_stream)
+        formatter = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        handler.setFormatter(formatter)
+        logging.getLogger().addHandler(handler)
+        last_timestamp = datetime.now()
+
         while True:
-            try:
-                message = output_queue[user_id].get_nowait()
-                if message == "PASSWORD_ERROR":
-                    yield f"data: PASSWORD_ERROR\n\n"
-                else:
-                    yield f"data: {message}\n\n"
-            except queue.Empty:
-                time.sleep(0.1)
+            log_stream.seek(0)
+            log_content = log_stream.read()
+            log_stream.truncate(0)
+            log_stream.seek(0)
+
+            if log_content:
+                log_lines = log_content.strip().split('\n')
+                new_logs = []
+                for line in log_lines:
+                    try:
+                        timestamp_str = line.split(' - ')[0]
+                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
+                        if timestamp > last_timestamp and user_id in line:
+                            new_logs.append(line)
+                            last_timestamp = timestamp
+                    except (ValueError, IndexError):
+                        continue
+
+                if new_logs:
+                    new_logs.reverse()
+                    newline = '\n'
+                    yield f"data: {newline.join(new_logs)}\n\n"
+            else:
+                try:
+                    message = output_queue[user_id].get_nowait()
+                    if message == "PASSWORD_ERROR":
+                        yield f"data: PASSWORD_ERROR\n\n"
+                    else:
+                        yield f"data: {message}\n\n"
+                except (KeyError, queue.Empty):
+                    time.sleep(0.1)
+
     return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == '__main__':

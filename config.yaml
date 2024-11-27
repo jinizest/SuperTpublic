@@ -15,7 +15,7 @@ boot: auto
 uart: true
 map:
   - share:rw
-webui: "http://[HOST]:[PORT:5000]"
+webui: "http://[HOST]:[PORT:5050]"
 options:
   share/srt_public/app.py 실행파일: true
   share/srt_public/templates/index.html 템플릿 파일: true

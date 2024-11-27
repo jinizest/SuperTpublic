@@ -193,14 +193,41 @@ def stop():
     return jsonify({'message': '예약 프로세스가 중단되었습니다.'})
 
 @app.route('/stream/<user_id>')
-def stream(user_id):
+def stream(user_id): 
     def generate():
+        log_stream = io.StringIO()
+        handler = logging.StreamHandler(log_stream)
+        formatter = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        handler.setFormatter(formatter)
+        logging.getLogger().addHandler(handler)
+        last_timestamp = datetime.now()
+
         while True:
-            try:
-                message = output_queue[user_id].get_nowait()
-                yield f"data: {message}\n\n"
-            except queue.Empty:
-                time.sleep(0.1)
+            log_stream.seek(0)
+            log_content = log_stream.read()
+            log_stream.truncate(0)
+            log_stream.seek(0)
+
+            if log_content:
+                log_lines = log_content.strip().split('\n')
+                new_logs = []
+                for line in log_lines:
+                    try:
+                        timestamp_str = line.split(' - ')[0]
+                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
+                        if timestamp > last_timestamp and user_id in line:
+                            new_logs.append(line)
+                            last_timestamp = timestamp
+                    except (ValueError, IndexError):
+                        continue  # 잘못된 형식의 로그 라인은 무시
+
+                if new_logs:
+                    new_logs.reverse()
+                    newline = '\n'
+                    yield f"data: {newline.join(new_logs)}\n\n"
+            else:
+                time.sleep(0.1)  # 0.1초마다 확인
+
     return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == '__main__':

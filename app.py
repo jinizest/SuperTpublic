@@ -289,12 +289,12 @@ def cleanup_reservation(user_id): #연결 끊기면 종료
 
 def check_client_connections():
     while True:
-        time.sleep(30)  # 30초마다 확인
+        time.sleep(15)  # 15초마다 확인
         current_time = time.time()
         for user_id, last_activity in list(client_connections.items()):
-            if current_time - last_activity > 60:  # 1분 이상 활동이 없으면
+            if current_time - last_activity > 30:  # 30초 이상 활동이 없으면
                 cleanup_reservation(user_id)
-                del client_connections[user_id]
+                client_connections.pop(user_id, None)  # KeyError 방지
 
 # 연결 확인 스레드 시작
 threading.Thread(target=check_client_connections, daemon=True).start()

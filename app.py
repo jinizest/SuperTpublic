@@ -11,6 +11,12 @@ from logging.handlers import RotatingFileHandler
 import configparser
 import io
 
+class NoHeartbeatFilter(logging.Filter): #하트비트 로그 안나오게 하기
+    def filter(self, record):
+        return 'GET /heartbeat' not in record.getMessage()
+
+logging.getLogger("werkzeug").addFilter(NoHeartbeatFilter())
+
 def get_config(key, default=None):
     config = configparser.ConfigParser()
     config_file = '/share/srt_public/app.conf'

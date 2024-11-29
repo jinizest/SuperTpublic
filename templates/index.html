@@ -369,14 +369,35 @@
             toggleInputField('arr_station', 'customArrStation');
         }
 
-        window.addEventListener('beforeunload', function (e) {
-            // 서버에 중지 요청 보내기
-            fetch('/stop', { method: 'POST' });
+        function sendHeartbeat() {
+            fetch('/heartbeat', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Heartbeat failed');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // 30초마다 heartbeat 전송
+        setInterval(sendHeartbeat, 30000);
+        
+        // 페이지 언로드 시 서버에 알림
+        window.addEventListener('beforeunload', function() {
+            navigator.sendBeacon('/disconnect');
         });
-
-        setInterval(function() {
-            fetch('/heartbeat');
-        }, 20000);  // 20초마다 하트비트 전송 (서버 연결 확인)
+        
+        // 서버로부터의 메시지 처리
+        const eventSource = new EventSource('/stream/');
+        eventSource.onmessage = function(event) {
+            if (event.data === "CONNECTION_LOST") {
+                console.log("서버와의 연결이 끊어졌습니다.");
+                eventSource.close();
+                // 필요한 추가 처리
+            } else {
+                // 기존 메시지 처리 로직
+            }
+        };
 
     </script>
 </head>

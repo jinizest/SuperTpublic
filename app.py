@@ -88,16 +88,19 @@ def send_telegram_message(bot_token, chat_id, message):
 def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_start, time_end, phone_number, enable_telegram, bot_token, chat_id):
     logger = get_user_logger(user_id)
     logger.info(f'예약 프로세스 시작 (사용자 ID: {user_id})')
-    
     try:
         srt = SRT(sid, spw, verbose=False)
         while not stop_reservation.get(user_id, False):
             try:
+                if user_id not in client_connections:
+                    logger.info(f"클라이언트 연결이 끊어졌습니다. (사용자 ID: {user_id})")
+                    break
+
                 message = '예약시도.....' + ' @' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 logger.info(message)
                 output_queue[user_id].put(message)
                 time.sleep(1)
-                
+
                 trains = srt.search_train(dep_station, arr_station, date, time_start, time_end, available_only=False)
                 if 'Expecting value' in str(trains):
                     message = 'Expecting value 오류'
@@ -105,11 +108,11 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                     output_queue[user_id].put(message)
                     messages[user_id].append(message)
                     continue
-                
+
                 for train in trains:
                     logger.info(str(train))
                     output_queue[user_id].put(str(train))
-                
+
                 for train in trains:
                     if stop_reservation.get(user_id, False):
                         break
@@ -132,6 +135,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                             output_queue[user_id].put("CRITICAL_ERROR")
                             stop_reservation[user_id] = True
                             break
+
             except Exception as e:
                 error_message = f"메인 루프에서 오류 발생: {e}"
                 logger.error(error_message)
@@ -147,8 +151,10 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                     output_queue[user_id].put("CRITICAL_ERROR")
                     stop_reservation[user_id] = True
                     break
-                time.sleep(5)
-                srt = SRT(sid, spw, verbose=False)
+
+            time.sleep(5)
+            srt = SRT(sid, spw, verbose=False)
+
     except Exception as main_e:
         critical_error = f"MACRO 중지, 오류 발생: {main_e}"
         logger.critical(critical_error)
@@ -158,21 +164,24 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
         stop_reservation[user_id] = True
         if enable_telegram:
             send_telegram_message(bot_token, chat_id, critical_error)
+
     finally:
         if 'srt' in locals():
             srt.logout()
+        cleanup_reservation(user_id)
+
     return messages[user_id]
 
 
 # -------------------- FLASK -----------------------------#
 
-@app.before_request #클라이언트 연결 확인
-def check_session():
-    if 'user_id' not in session:
-        session['user_id'] = request.remote_addr
 
-@app.route('/heartbeat') #클라이언트 연결 확인
+client_connections = {}
+
+@app.route('/heartbeat', methods=['POST'])
 def heartbeat():
+    user_id = request.remote_addr
+    client_connections[user_id] = time.time()
     return 'OK'
 
 
@@ -269,19 +278,26 @@ def stream(user_id):
     return Response(generate(), mimetype='text/event-stream')
 
 
-def cleanup_reservation(user_id): # 연결 끊기면 종료
-    stop_reservation[user_id] = True
+def cleanup_reservation(user_id): #연결 끊기면 종료
+    if user_id in stop_reservation:
+        stop_reservation[user_id] = True
+    if user_id in output_queue:
+        output_queue[user_id].put("CONNECTION_LOST")
+    if user_id in client_connections: # 종료된 클라이언트 삭제
+        del client_connections[user_id]
     # 필요한 추가 정리 작업 수행
 
-def check_active_sessions(): #연결되어있는지 확인
+def check_client_connections():
     while True:
         time.sleep(30)  # 30초마다 확인
-        for user_id in list(stop_reservation.keys()):
-            if user_id not in session:
+        current_time = time.time()
+        for user_id, last_activity in list(client_connections.items()):
+            if current_time - last_activity > 60:  # 1분 이상 활동이 없으면
                 cleanup_reservation(user_id)
+                del client_connections[user_id]
 
-# 백그라운드에서 세션 체크 스레드 실행
-threading.Thread(target=check_active_sessions, daemon=True).start()
+# 연결 확인 스레드 시작
+threading.Thread(target=check_client_connections, daemon=True).start()
 
 if __name__ == '__main__':
     log_level = get_config('LOG_LEVEL', 'INFO').upper()

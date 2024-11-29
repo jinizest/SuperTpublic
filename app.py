@@ -278,14 +278,23 @@ def stream(user_id):
     return Response(generate(), mimetype='text/event-stream')
 
 
-def cleanup_reservation(user_id): #연결 끊기면 종료
+def cleanup_reservation(user_id):
+    logger = get_user_logger(user_id)
+    logger.info(f"클라이언트 연결 종료 확인. 정리 작업 시작 (사용자 ID: {user_id})")
+    
     if user_id in stop_reservation:
         stop_reservation[user_id] = True
+        logger.info(f"예약 프로세스 중지 (사용자 ID: {user_id})")
+    
     if user_id in output_queue:
         output_queue[user_id].put("CONNECTION_LOST")
-    if user_id in client_connections: # 종료된 클라이언트 삭제
+        logger.info(f"클라이언트에 연결 종료 메시지 전송 (사용자 ID: {user_id})")
+    
+    if user_id in client_connections:
         del client_connections[user_id]
-    # 필요한 추가 정리 작업 수행
+        logger.info(f"클라이언트 연결 정보 삭제 (사용자 ID: {user_id})")
+    
+    logger.info(f"정리 작업 완료 (사용자 ID: {user_id})")
 
 def check_client_connections():
     while True:
@@ -293,8 +302,11 @@ def check_client_connections():
         current_time = time.time()
         for user_id, last_activity in list(client_connections.items()):
             if current_time - last_activity > 30:  # 30초 이상 활동이 없으면
+                logger = get_user_logger(user_id)
+                logger.info(f"클라이언트 비활성 감지. 정리 작업 시작 (사용자 ID: {user_id})")
                 cleanup_reservation(user_id)
                 client_connections.pop(user_id, None)  # KeyError 방지
+                logger.info(f"클라이언트 연결 정보 제거 완료 (사용자 ID: {user_id})")
 
 # 연결 확인 스레드 시작
 threading.Thread(target=check_client_connections, daemon=True).start()

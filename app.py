@@ -109,9 +109,9 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                     messages[user_id].append(message)
                     continue
 
-                for train in trains:
-                    logger.info(str(train))
-                    output_queue[user_id].put(str(train))
+                # for train in trains: #예매 기차 출력
+                #     logger.info(str(train))
+                #     output_queue[user_id].put(str(train))
 
                 for train in trains:
                     if stop_reservation.get(user_id, False):

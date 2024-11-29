@@ -379,8 +379,8 @@
                 .catch(error => console.error('Error:', error));
         }
         
-        // 30초마다 heartbeat 전송
-        setInterval(sendHeartbeat, 30000);
+        // 15초마다 heartbeat 전송
+        setInterval(sendHeartbeat, 15000);
         
         // 페이지 언로드 시 서버에 알림
         window.addEventListener('beforeunload', function() {

@@ -290,7 +290,7 @@
         function submitForm(event) {
             event.preventDefault();
             if (isReservationRunning) {
-                alert("이미 예약 프로세스가 진행 중입니다.");
+                showPopup("이미 예약 프로세스가 진행 중입니다.");
                 return;
             }
             isReservationRunning = true;
@@ -315,7 +315,7 @@
             fetch('/stop', {method: 'POST'})
             .then(response => response.json())
             .then(data => {
-                alert(data.message);
+                showPopup("예약 프로세스가 중단되었습니다.");
                 isReservationRunning = false;
                 document.getElementById('stopButton').disabled = true;
                 document.getElementById('results').innerHTML = data.message;
@@ -371,10 +371,10 @@
             var outputDiv = document.getElementById("log-area");
             if (event.data.startsWith("PASSWORD_ERROR:")) {
                 var errorMessage = event.data.split(":")[1];
-                alert("비밀번호 오류: " + errorMessage);
+                showPopup("비밀번호 오류: " + errorMessage);
                 document.getElementById("stopButton").click();
             } else if (event.data === "CRITICAL_ERROR") {
-                alert("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
+                showPopup("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
                 document.getElementById("stopButton").click();
             } else if (event.data.startsWith("SRT 예약 대기 완료")) {
                 showPopup("열차 예매에 성공했습니다!");

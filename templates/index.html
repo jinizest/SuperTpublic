@@ -204,6 +204,37 @@
             width: 18px;
             height: 18px;
         }
+        
+        /* 플래시 메시지 스타일 추가 */
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .flash-success {
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+            color: #3c763d;
+        }
+        
+        /* 팝업 스타일 추가 */
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
         @media (max-width: 500px) {
             body {
                 padding: 2vw; /* 뷰포트 너비(viewport width)의 2%로 패딩 설정 */
@@ -399,22 +430,53 @@
             }
         };
 
+
+                // 성공 팝업 표시 함수 추가
+                function showPopup(message) {
+                    var popup = document.createElement('div');
+                    popup.className = 'popup';
+                    popup.innerHTML = `
+                        <div class="popup-content">
+                            <p>${message}</p>
+                            <button onclick="closePopup()">확인</button>
+                        </div>
+                    `;
+                    document.body.appendChild(popup);
+                }
+        
+                function closePopup() {
+                    var popup = document.querySelector('.popup');
+                    if (popup) {
+                        popup.remove();
+                    }
+                }
+        
+                // 서버로부터의 메시지 처리 수정
+                outputSource.onmessage = function(event) {
+                    var outputDiv = document.getElementById("log-area");
+                    if (event.data === "CRITICAL_ERROR") {
+                        alert("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
+                        document.getElementById("stopButton").click();
+                    } else if (event.data.startsWith("SRT 예약 대기 완료")) {
+                        showPopup("열차 예매에 성공했습니다!");
+                    } else {
+                        var newLogs = event.data.split('\n').filter(Boolean);
+                        newLogs.forEach(function(log) {
+                            var logElement = document.createElement('div');
+                            logElement.textContent = log;
+                            outputDiv.insertBefore(logElement, outputDiv.firstChild);
+                        });
+                        while (outputDiv.childElementCount > 1000) {
+                            outputDiv.removeChild(outputDiv.lastChild);
+                        }
+                    }
+                };
+
     </script>
 </head>
 <body>
     <main class="container" style="padding-top: 5px">
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590949130474067"
-     crossorigin="anonymous"></script>
-<!-- SuperTpublic -->
-<ins class="adsbygoogle"
-     style="display:block"
-     data-ad-client="ca-pub-3590949130474067"
-     data-ad-slot="7264371834"
-     data-ad-format="auto"
-     data-full-width-responsive="true"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
+
         <h1>SRT MACRO <span class="creator">Created by Sambajin</span></h1>
         <form method="post" onsubmit="submitForm(event)">
             <div class="login-container">
@@ -519,8 +581,29 @@
                 <button type='button' id='stopButton' class='stop-button' onclick='stopReservation()' disabled>중단</button>
             </div>
         </form>
+                <!-- 플래시 메시지 표시 영역 추가 -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
         <div id='results' style="padding-top: 10px"></div>
         <div id="log-area" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
+   <!-- Google Ad -->
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590949130474067"
+        crossorigin="anonymous"></script>
+   <!-- SuperTpublic -->
+   <ins class="adsbygoogle"
+        style="display:block"
+        data-ad-client="ca-pub-3590949130474067"
+        data-ad-slot="7264371834"
+        data-ad-format="auto"
+        data-full-width-responsive="true"></ins>
+   <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+   </script>
     </main>
 </body>
 </html>

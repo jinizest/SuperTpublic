@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response, session
+from flask import Flask, render_template, request, jsonify, Response, session, flash
 from SRT import SRT
 import requests
 from datetime import datetime
@@ -120,11 +120,13 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                         srt.reserve_standby(train)
                         srt.reserve_standby_option_settings(phone_number, True, True)
                         success_message = f"SRT 예약 대기 완료 {train}"
+                        logger.info(success_message)
                         messages[user_id].append(success_message)
                         output_queue[user_id].put(success_message)
                         if enable_telegram:
                             send_telegram_message(bot_token, chat_id, success_message)
                         logger.info("예약 성공했지만 계속 진행합니다.")
+                        flash("열차 예매에 성공했습니다!", "success")
                         break
                     except Exception as e:
                         error_message = f"열차 {train}에 대한 오류 발생: {e}"

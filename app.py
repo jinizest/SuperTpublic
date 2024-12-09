@@ -140,7 +140,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
 
             except Exception as e:
                 error_message = f"메인 루프에서 오류 발생: {e}"
-                logger.error(error_message)
+                logger.info(error_message)
                 output_queue[user_id].put(error_message)
                 messages[user_id].append(error_message)
                 if '사용자가 많아 접속이 원활하지 않습니다.' in str(e):
@@ -159,8 +159,12 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
 
     except Exception as main_e:
         critical_error = f"MACRO 중지, 오류 발생: {main_e}"
-        logger.critical(critical_error)
-        output_queue[user_id].put(critical_error)
+        logger.info(critical_error)
+        if '비밀번호' in str(main_e):
+            error_message = str(main_e)
+            output_queue[user_id].put(f"PASSWORD_ERROR:{error_message}")
+        else:
+            output_queue[user_id].put(critical_error)
         output_queue[user_id].put("CRITICAL_ERROR")
         messages[user_id].append(critical_error)
         stop_reservation[user_id] = True

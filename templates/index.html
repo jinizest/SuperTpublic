@@ -356,9 +356,15 @@
         var outputSource = new EventSource('/stream/' + userIp);
         outputSource.onmessage = function(event) {
             var outputDiv = document.getElementById("log-area");
-            if (event.data === "CRITICAL_ERROR") {
+            if (event.data.startsWith("PASSWORD_ERROR:")) {
+                var errorMessage = event.data.split(":")[1];
+                alert("비밀번호 오류: " + errorMessage);
+                document.getElementById("stopButton").click();
+            } else if (event.data === "CRITICAL_ERROR") {
                 alert("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
                 document.getElementById("stopButton").click();
+            } else if (event.data.startsWith("SRT 예약 대기 완료")) {
+                showPopup("열차 예매에 성공했습니다!");
             } else {
                 var newLogs = event.data.split('\n').filter(Boolean);
                 newLogs.forEach(function(log) {
@@ -370,7 +376,7 @@
                     outputDiv.removeChild(outputDiv.lastChild);
                 }
             }
-        };     
+        };   
 
         function toggleInputVisibility() {
             var botTokenInput = document.getElementById('bot_token');
@@ -430,47 +436,25 @@
             }
         };
 
+        // 성공 팝업 표시 함수 추가
+        function showPopup(message) {
+            var popup = document.createElement('div');
+            popup.className = 'popup';
+            popup.innerHTML = `
+                <div class="popup-content">
+                    <p>${message}</p>
+                    <button onclick="closePopup()">확인</button>
+                </div>
+            `;
+            document.body.appendChild(popup);
+        }
 
-                // 성공 팝업 표시 함수 추가
-                function showPopup(message) {
-                    var popup = document.createElement('div');
-                    popup.className = 'popup';
-                    popup.innerHTML = `
-                        <div class="popup-content">
-                            <p>${message}</p>
-                            <button onclick="closePopup()">확인</button>
-                        </div>
-                    `;
-                    document.body.appendChild(popup);
-                }
-        
-                function closePopup() {
-                    var popup = document.querySelector('.popup');
-                    if (popup) {
-                        popup.remove();
-                    }
-                }
-        
-                // 서버로부터의 메시지 처리 수정
-                outputSource.onmessage = function(event) {
-                    var outputDiv = document.getElementById("log-area");
-                    if (event.data === "CRITICAL_ERROR") {
-                        alert("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
-                        document.getElementById("stopButton").click();
-                    } else if (event.data.startsWith("SRT 예약 대기 완료")) {
-                        showPopup("열차 예매에 성공했습니다!");
-                    } else {
-                        var newLogs = event.data.split('\n').filter(Boolean);
-                        newLogs.forEach(function(log) {
-                            var logElement = document.createElement('div');
-                            logElement.textContent = log;
-                            outputDiv.insertBefore(logElement, outputDiv.firstChild);
-                        });
-                        while (outputDiv.childElementCount > 1000) {
-                            outputDiv.removeChild(outputDiv.lastChild);
-                        }
-                    }
-                };
+        function closePopup() {
+            var popup = document.querySelector('.popup');
+            if (popup) {
+                popup.remove();
+            }
+        }
 
     </script>
 </head>

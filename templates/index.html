@@ -254,11 +254,11 @@
         }
         /* buy me coffee 버튼 감싼 컨테이너 */
         #bmc-container {
-            position: fixed;
-            bottom: 1%;
-            right: 1%;
-            transform: scale(0.6);
-            transform-origin: bottom right;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.6);
+        transform-origin: right;
         }
 
         @media (max-width: 500px) {
@@ -608,14 +608,15 @@
                 {% endif %}
             {% endwith %}
         <div id='results' style="padding-top: 10px"></div>
-        <div id="log-area" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
-       <!-- Kakao Ad -->
+        <!-- Kakao Ad -->
        <ins class="kakao_ad_area" style="display:none;"
        data-ad-unit = "DAN-Md77zeEjMAkLuxWg"
        data-ad-width = "320"
        data-ad-height = "100"></ins>
        <script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
         <!-- Kakao Ad -->
+
+        <div id="log-area" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
         
         <!-- buy me coffee -->
         <div id="bmc-container">

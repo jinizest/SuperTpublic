@@ -90,6 +90,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
     logger.info(f'예약 프로세스 시작 (사용자 ID: {user_id})')
     try:
         srt = SRT(sid, spw, verbose=False)
+        trains = srt.search_train(dep_station, arr_station, date, time_start, time_end, available_only=False)
         while not stop_reservation.get(user_id, False):
             try:
                 if user_id not in client_connections:
@@ -99,9 +100,9 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                 message = '예약시도.....' + ' @' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 logger.info(message)
                 output_queue[user_id].put(message)
-                time.sleep(1)
+                time.sleep(2)
 
-                trains = srt.search_train(dep_station, arr_station, date, time_start, time_end, available_only=False)
+               
                 if 'Expecting value' in str(trains):
                     message = 'Expecting value 오류'
                     logger.error(message)

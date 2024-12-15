@@ -252,6 +252,15 @@
             border-radius: 5px;
             text-align: center;
         }
+        /* buy me coffee 버튼 감싼 컨테이너 */
+        #bmc-container {
+            position: fixed;
+            bottom: 1%;
+            right: 1%;
+            transform: scale(0.6);
+            transform-origin: bottom right;
+        }
+
         @media (max-width: 500px) {
             body {
                 padding: 2vw; /* 뷰포트 너비(viewport width)의 2%로 패딩 설정 */
@@ -609,9 +618,11 @@
         <!-- Kakao Ad -->
         
         <!-- buy me coffee -->
-        <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="devwalker" data-color="#40DCA5" data-emoji="☕"  data-font="Lato" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+        <div id="bmc-container">
+            <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="devwalker" data-color="#4d92a1" data-emoji="☕"  data-font="Poppins" data-text="커피 한잔 쏘기" data-outline-color="#000000" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+          </div>
         <!-- buy me coffee -->
-         
+
     <!-- Google Ad -->
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590949130474067"
         crossorigin="anonymous"></script>

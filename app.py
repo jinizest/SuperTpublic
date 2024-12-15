@@ -33,7 +33,7 @@ def get_config(key, default=None):
 app = Flask(__name__)
 
 SECRET_KEY = get_config('secret_key', 'vmffktmzm!@#')
-app.secret_key = 'your_secret_key_here'  # 보안설정 안전한 랜덤
+app.secret_key = SECRET_KEY  # 보안설정 안전한 랜덤
 
 # 로그 디렉토리 생성
 log_dir = '/share/srt_public/logs'

@@ -378,31 +378,63 @@
             toggleTelegramFields();
         }
 
+        
         var userIp = "{{ request.remote_addr }}";
-        var outputSource = new EventSource('/stream/' + userIp);
-        outputSource.onmessage = function(event) {
-            var outputDiv = document.getElementById("log-area");
+        const logContainer = document.getElementById('log-container');
+        const eventSource = new EventSource('/stream/' + encodeURIComponent(userIp));
+        
+        eventSource.onmessage = function(event) {
             if (event.data.startsWith("PASSWORD_ERROR:")) {
-                var errorMessage = event.data.split(":")[1];
+                console.log("비밀번호 오류가 발생했습니다.");
+                const errorMessage = event.data.split(":")[1];
                 showPopup("비밀번호 오류: " + errorMessage);
                 document.getElementById("stopButton").click();
-            } else if (event.data === "CRITICAL_ERROR") {
+                resetLoginForm();
+                eventSource.close();
+            }
+            if (event.data === "CRITICAL_ERROR") {
+                console.log("심각한 오류가 발생했습니다.");
                 showPopup("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
                 document.getElementById("stopButton").click();
-            } else if (event.data.startsWith("SRT 예약 대기 완료")) {
+                eventSource.close();
+            } 
+            if (event.data.startsWith("SRT 예약 대기 완료")) {
                 showPopup("열차 예매에 성공했습니다!");
-            } else {
+            } 
+            if (event.data === "CONNECTION_LOST") {
+                console.log("서버와의 연결이 끊어졌습니다.");
+                logContainer.innerHTML += "<p>서버와의 연결이 끊어졌습니다.</p>";
+                eventSource.close();
+            } 
+            {
                 var newLogs = event.data.split('\n').filter(Boolean);
                 newLogs.forEach(function(log) {
                     var logElement = document.createElement('div');
                     logElement.textContent = log;
-                    outputDiv.insertBefore(logElement, outputDiv.firstChild);
+                    logContainer.insertBefore(logElement, logContainer.firstChild);
                 });
-                while (outputDiv.childElementCount > 1000) {
-                    outputDiv.removeChild(outputDiv.lastChild);
+                while (logContainer.childElementCount > 1000) {
+                    logContainer.removeChild(logContainer.lastChild);
                 }
             }
-        };   
+            logContainer.scrollTop = 0;
+        };
+        
+        eventSource.onerror = function(error) {
+            console.error("EventSource 오류:", error);
+            logContainer.innerHTML += "<p>서버 연결 오류가 발생했습니다. 페이지를 새로고침해주세요.</p>";
+            eventSource.close();
+        };
+        
+        function showPopup(message) {
+            alert(message);
+        }
+        
+        function resetLoginForm() {
+            document.getElementById('spw').value = '';
+            document.getElementById('spw').focus();
+        }
+          
 
         function toggleInputVisibility() {
             var botTokenInput = document.getElementById('bot_token');
@@ -450,43 +482,6 @@
             navigator.sendBeacon('/disconnect');
         });
         
-        // 서버로부터의 메시지 처리
-        const logContainer = document.getElementById('log-container');
-        const eventSource = new EventSource('/stream/' + encodeURIComponent(userIpAddress));
-
-        eventSource.onmessage = function(event) {
-            if (event.data === "PASSWORD_ERROR") {
-                console.log("비밀번호 오류가 발생했습니다.");
-                const errorMessage = event.data.split(":")[1];
-                alert("비밀번호 오류가 발생했습니다. 다시 시도해주세요.");
-                logContainer.innerHTML += "<p>비밀번호 오류가 발생했습니다. 다시 시도해주세요.</p>";
-                resetLoginForm();
-                eventSource.close();
-            } 
-            if (event.data === "CRITICAL_ERROR") {
-                console.log("심각한 오류가 발생했습니다.");
-                eventSource.close();
-                logContainer.innerHTML += "<p>심각한 오류가 발생했습니다. 관리자에게 문의하세요.</p>";
-                alert("심각한 오류가 발생했습니다. 관리자에게 문의하세요.");
-                // 심각한 오류 처리 (예: 에러 메시지 표시)
-            } 
-            if (event.data === "CONNECTION_LOST") {
-                console.log("서버와의 연결이 끊어졌습니다.");
-                logContainer.innerHTML += "<p>서버와의 연결이 끊어졌습니다.</p>";
-                eventSource.close();
-                // 필요한 추가 처리 (예: 재연결 버튼 표시)
-            } 
-            
-            // 일반 메시지 처리
-            logContainer.innerHTML += "<p>" + event.data + "</p>";
-            logContainer.scrollTop = logContainer.scrollHeight;
-        };
-
-        eventSource.onerror = function(error) {
-            console.error("EventSource 오류:", error);
-            logContainer.innerHTML += "<p>서버 연결 오류가 발생했습니다. 페이지를 새로고침해주세요.</p>";
-            eventSource.close();
-        };
 
 
         function showPopup(message) {
@@ -513,11 +508,6 @@
             if (popup) {
                 popup.remove();
             }
-        }
-
-        function resetLoginForm() {
-            document.getElementById('spw').value = '';
-            document.getElementById('spw').focus();
         }
 
     </script>

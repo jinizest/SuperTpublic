@@ -17,8 +17,10 @@ class CustomLogFilter(logging.Filter):
         return not any([
             'GET /heartbeat' in message,
             'POST /heartbeat' in message,
+            'POST / HTTP/1.1' in message,
+            'POST /stop HTTP/1.1' in message,
+            'GET /stream/' in message,
             # 'GET /favicon.ico' in message,
-            # 'GET /stream/' in message,
             # 'POST /stop' in message
         ])
 

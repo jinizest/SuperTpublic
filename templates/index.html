@@ -381,13 +381,10 @@
         
         var userIp = "{{ request.remote_addr }}";
         const logContainer = document.getElementById('log-container');
-        const eventSource = new EventSource('/stream/' + encodeURIComponent(userIpAddress));
+        const eventSource = new EventSource('/stream/' + encodeURIComponent(userIp));
         
         eventSource.onmessage = function(event) {
-            const message = event.data;
-            logContainer.innerHTML += message + '<br>';
-
-            if (event.data.startsWith("PASSWORD_ERROR")) {
+            if (event.data.startsWith("PASSWORD_ERROR:")) {
                 console.log("비밀번호 오류가 발생했습니다.");
                 const errorMessage = event.data.split(":")[1];
                 showPopup("비밀번호 오류: " + errorMessage);

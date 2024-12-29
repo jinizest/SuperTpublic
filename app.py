@@ -174,7 +174,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
         logger.info(critical_error)
         if '비밀번호' in str(main_e):
             error_message = str(main_e)
-            output_queue[user_id].put(f"PASSWORD_ERROR:{error_message}")
+            output_queue[user_id].put(f"PASSWORD_ERROR")
         else:
             output_queue[user_id].put(critical_error)
         output_queue[user_id].put("CRITICAL_ERROR")

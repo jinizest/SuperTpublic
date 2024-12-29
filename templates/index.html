@@ -386,12 +386,15 @@
                 var errorMessage = event.data.split(":")[1];
                 showPopup("비밀번호 오류: " + errorMessage);
                 document.getElementById("stopButton").click();
-            } else if (event.data === "CRITICAL_ERROR") {
+            } 
+            if (event.data === "CRITICAL_ERROR") {
                 showPopup("오류가 발생했습니다. 예약 프로세스가 중단됩니다.");
                 document.getElementById("stopButton").click();
-            } else if (event.data.startsWith("SRT 예약 대기 완료")) {
+            } 
+            if (event.data.startsWith("SRT 예약 대기 완료")) {
                 showPopup("열차 예매에 성공했습니다!");
-            } else {
+            } 
+            {
                 var newLogs = event.data.split('\n').filter(Boolean);
                 newLogs.forEach(function(log) {
                     var logElement = document.createElement('div');

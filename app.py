@@ -17,9 +17,9 @@ class CustomLogFilter(logging.Filter):
         return not any([
             'GET /heartbeat' in message,
             'POST /heartbeat' in message,
-            'GET /favicon.ico' in message,
-            'GET /stream/' in message,
-            'POST /stop' in message
+            # 'GET /favicon.ico' in message,
+            # 'GET /stream/' in message,
+            # 'POST /stop' in message
         ])
 
 # Werkzeug 로거에 필터 적용
@@ -144,7 +144,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                         output_queue[user_id].put(error_message)
                         messages[user_id].append(error_message)
                         if '비밀번호' in str(e) or '심각한 오류' in str(e):
-                            output_queue[user_id].put("CRITICAL_ERROR")
+                            output_queue[user_id].put("PASSWORD_ERROR")
                             stop_reservation[user_id] = True
                             break
 

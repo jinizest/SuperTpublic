@@ -104,7 +104,9 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
         trains = srt.search_train(dep_station, arr_station, date, time_start, time_end, available_only=False)
         while not stop_reservation.get(user_id, False):
             try:
-
+                if user_id not in client_connections:
+                    logger.info(f"클라이언트 연결이 끊어졌습니다. (사용자 ID: {user_id})")
+                    break
 
                 message = '예약시도.....' + ' @' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 logger.info(message)
@@ -147,10 +149,6 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                             output_queue[user_id].put("PASSWORD_ERROR")
                             stop_reservation[user_id] = True
                             break
-                
-                if user_id not in client_connections:
-                    logger.info(f"클라이언트 연결이 끊어졌습니다. (사용자 ID: {user_id})")
-                    break
 
             except Exception as e:
                 error_message = f"메인 루프에서 오류 발생: {e}"
@@ -176,7 +174,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
         logger.info(critical_error)
         if '비밀번호' in str(main_e):
             error_message = str(main_e)
-            output_queue[user_id].put("PASSWORD_ERROR")
+            output_queue[user_id].put(f"PASSWORD_ERROR:{error_message}")
         else:
             output_queue[user_id].put(critical_error)
         output_queue[user_id].put("CRITICAL_ERROR")

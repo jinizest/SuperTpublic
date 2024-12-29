@@ -11,11 +11,20 @@ from logging.handlers import RotatingFileHandler
 import configparser
 import io
 
-class NoHeartbeatFilter(logging.Filter): #하트비트 로그 안나오게 하기
+class CustomLogFilter(logging.Filter):
     def filter(self, record):
-        return 'GET /heartbeat' not in record.getMessage()
+        message = record.getMessage()
+        return not any([
+            'GET /heartbeat' in message,
+            'POST /heartbeat' in message,
+            'GET /favicon.ico' in message,
+            'GET /stream/' in message,
+            'POST /stop' in message
+        ])
 
-logging.getLogger("werkzeug").addFilter(NoHeartbeatFilter())
+# Werkzeug 로거에 필터 적용
+logging.getLogger("werkzeug").addFilter(CustomLogFilter())
+
 
 def get_config(key, default=None):
     config = configparser.ConfigParser()

@@ -142,9 +142,22 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                         break
                     except Exception as e:
                         error_message = f"열차 {train}에 대한 오류 발생: {e}"
-                        logger.error(error_message)
-                        output_queue[user_id].put(error_message)
-                        messages[user_id].append(error_message)
+                        logging.error(error_message)
+                        output_queue.put(error_message)
+                        messages.append(error_message)
+                        if '원활하지 않습니다' in str(e):
+                            time.sleep(3)
+                            srt = SRT(sid, spw, verbose=False)
+                            continue                        
+                        if 'Expecting value' in str(e):
+                            message = 'Expecting value 오류'
+                            logging.error(message)
+                            output_queue.put(message)
+                            messages.append(message)
+                            srt = SRT(sid, spw, verbose=False)
+                            trains = srt.search_train(dep_station, arr_station, date, time_start, time_end, available_only=False)
+                            continue
+                        
                         if '비밀번호' in str(e) or '심각한 오류' in str(e):
                             output_queue[user_id].put("PASSWORD_ERROR")
                             stop_reservation[user_id] = True
@@ -155,8 +168,8 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                 logger.info(error_message)
                 output_queue[user_id].put(error_message)
                 messages[user_id].append(error_message)
-                if '사용자가 많아 접속이 원활하지 않습니다.' in str(e):
-                    time.sleep(5)
+                if '원활하지 않습니다' in str(e):
+                    time.sleep(3)
                     srt = SRT(sid, spw, verbose=False)
                     continue
                 if enable_telegram:

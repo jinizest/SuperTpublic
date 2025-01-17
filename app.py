@@ -128,10 +128,15 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                 for train in trains:
                     if stop_reservation.get(user_id, False):
                         break
-                    try:
-                        srt.reserve_standby(train)
-                        srt.reserve_standby_option_settings(phone_number, True, True)
-                        success_message = f"SRT 예약 대기 완료 {train}"
+                    try:                        
+                        if "예약대기 가능" in str(train):
+                            srt.reserve_standby(train)
+                            srt.reserve_standby_option_settings(phone_number, True, True)
+                            success_message = f"SRT 예약 대기 완료 {train}"
+                        else:
+                            srt.reserve(train)
+                            success_message = f"SRT 예약 완료, !!결재 필요!! {train}"
+                                            
                         logger.info(success_message)
                         messages[user_id].append(success_message)
                         output_queue[user_id].put(success_message)

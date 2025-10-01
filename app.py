@@ -337,7 +337,8 @@ def check_client_connections():
         time.sleep(15)  # 15초마다 확인
         current_time = time.time()
         for user_id, last_activity in list(client_connections.items()):
-            if current_time - last_activity > 30:  # 30초 이상 활동이 없으면
+            # if current_time - last_activity > 30:  # 30초 이상 활동이 없으면
+            if False:  # 일어나지않음
                 logger = get_user_logger(user_id)
                 logger.info(f"클라이언트 비활성 감지. 정리 작업 시작 (사용자 ID: {user_id})")
                 cleanup_reservation(user_id)

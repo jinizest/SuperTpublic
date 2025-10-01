@@ -46,6 +46,8 @@ app = Flask(__name__)
 SECRET_KEY = get_config('secret_key', 'vmffktmzm!@#')
 app.secret_key = SECRET_KEY  # 보안설정 안전한 랜덤
 
+time_delay = 3 #몇초마다 조회할지
+
 # 로그 디렉토리 생성
 log_dir = '/share/srt_public/logs'
 os.makedirs(log_dir, exist_ok=True)
@@ -184,7 +186,7 @@ def attempt_reservation(user_id, sid, spw, dep_station, arr_station, date, time_
                     stop_reservation[user_id] = True
                     break
 
-            time.sleep(5)
+            time.sleep(time_delay)
             srt = SRT(sid, spw, verbose=False)
 
     except Exception as main_e:
